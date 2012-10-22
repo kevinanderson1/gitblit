@@ -18,10 +18,12 @@ package com.gitblit.wicket;
 import org.apache.wicket.Application;
 import org.apache.wicket.Page;
 import org.apache.wicket.Request;
+import org.apache.wicket.RequestCycle;
 import org.apache.wicket.Response;
 import org.apache.wicket.Session;
 import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.protocol.http.WebApplication;
+import org.apache.wicket.protocol.http.WebRequest;
 
 import com.gitblit.GitBlit;
 import com.gitblit.Keys;
@@ -137,6 +139,11 @@ public class GitBlitWebApp extends WebApplication {
 	@Override
 	public Class<? extends Page> getHomePage() {
 		return RepositoriesPage.class;
+	}
+	
+	@Override
+	public RequestCycle newRequestCycle(Request request, Response response){
+		return new GitBlitRequestCycle(this, (WebRequest) request, response);
 	}
 	
 	@Override

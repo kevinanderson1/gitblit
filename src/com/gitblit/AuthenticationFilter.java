@@ -18,11 +18,14 @@ package com.gitblit;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.security.Principal;
+import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.naming.InvalidNameException;
+import javax.naming.ldap.LdapName;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -95,6 +98,29 @@ public abstract class AuthenticationFilter implements Filter {
 	 */
 	protected UserModel getUser(HttpServletRequest httpRequest) {
 		UserModel user = null;
+		if (httpRequest.getAttribute("javax.servlet.request.X509Certificate") != null) {
+			X509Certificate[] certChain = (X509Certificate[]) httpRequest
+					.getAttribute("javax.servlet.request.X509Certificate");
+
+			if (certChain != null) {
+				String username = null;
+				try {
+					LdapName dn = new LdapName(certChain[0]
+							.getSubjectX500Principal().getName("CANONICAL"));
+					username = dn.get(dn.size() - 1);
+				} catch (InvalidNameException e) {
+					System.out.println(e.getMessage());
+				}
+
+				if (username != null) {
+					user = GitBlit.self().getUserModel(username);
+				}
+
+				if (user != null) {
+					return user;
+				}
+			}
+		}
 		// look for client authorization credentials in header
 		final String authorization = httpRequest.getHeader("Authorization");
 		if (authorization != null && authorization.startsWith(BASIC)) {
